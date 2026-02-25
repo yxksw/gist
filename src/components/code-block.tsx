@@ -1,7 +1,8 @@
 'use client'
 
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter'
-import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism'
+import { vs, vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism'
+import { useTheme } from '@/components/theme-provider'
 
 interface CodeBlockProps {
   code: string
@@ -23,17 +24,23 @@ const languageMap: Record<string, string> = {
 }
 
 export function CodeBlock({ code, language, showLineNumbers = true }: CodeBlockProps) {
+  const { theme } = useTheme()
   const normalizedLanguage = languageMap[language.toLowerCase()] || language.toLowerCase()
+  
+  const style = theme === 'dark' ? vscDarkPlus : vs
+  const backgroundColor = theme === 'dark' ? '#1e1e1e' : '#f8f9fa'
+  const lineNumberColor = theme === 'dark' ? '#6e7681' : '#9ca3af'
+  const lineNumberBg = theme === 'dark' ? '#252526' : '#f3f4f6'
 
   return (
-    <div className="rounded-lg overflow-hidden border border-gray-200">
-      <div className="bg-gray-100 px-4 py-2 border-b border-gray-200 flex items-center justify-between">
-        <span className="text-xs text-gray-500 font-medium uppercase">
+    <div className="rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700">
+      <div className="bg-gray-100 dark:bg-gray-800 px-4 py-2 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
+        <span className="text-xs text-gray-500 dark:text-gray-400 font-medium uppercase">
           {normalizedLanguage}
         </span>
         <button
           onClick={() => navigator.clipboard.writeText(code)}
-          className="text-xs text-gray-500 hover:text-gray-700 flex items-center gap-1"
+          className="text-xs text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 flex items-center gap-1"
         >
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
@@ -43,17 +50,19 @@ export function CodeBlock({ code, language, showLineNumbers = true }: CodeBlockP
       </div>
       <SyntaxHighlighter
         language={normalizedLanguage}
-        style={vscDarkPlus}
+        style={style}
         showLineNumbers={showLineNumbers}
         customStyle={{
           margin: 0,
           borderRadius: 0,
           fontSize: '14px',
+          backgroundColor,
         }}
         lineNumberStyle={{
           minWidth: '3em',
           paddingRight: '1em',
-          color: '#6e7681',
+          color: lineNumberColor,
+          backgroundColor: lineNumberBg,
         }}
       >
         {code}
