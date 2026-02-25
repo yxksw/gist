@@ -29,26 +29,27 @@ export default function EditSnippetPage() {
       return
     }
 
+    // Fetch snippet data
+    const fetchSnippet = async () => {
+      try {
+        const response = await fetch(`/api/snippets/${id}`)
+        const data = await response.json()
+
+        if (!response.ok) {
+          throw new Error(data.error || 'Failed to fetch snippet')
+        }
+
+        setSnippet(data.snippet)
+      } catch (err) {
+        console.error(err)
+        router.push('/')
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
     fetchSnippet()
   }, [session, status, router, id])
-
-  const fetchSnippet = async () => {
-    try {
-      const response = await fetch(`/api/snippets/${id}`)
-      const data = await response.json()
-
-      if (!response.ok) {
-        throw new Error(data.error || 'Failed to fetch snippet')
-      }
-
-      setSnippet(data.snippet)
-    } catch (err) {
-      console.error(err)
-      router.push('/')
-    } finally {
-      setIsLoading(false)
-    }
-  }
 
   if (isLoading || !snippet) {
     return (

@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { useSession, signIn, signOut } from 'next-auth/react'
 import Link from 'next/link'
+import Image from 'next/image'
 import { isAuthorizedUser } from '@/lib/config'
 import { useTheme } from '@/components/theme-provider'
 import { useI18n } from '@/components/i18n-provider'
@@ -31,7 +32,7 @@ export function Header() {
               ) : siteConfig.favicon.type === 'svg' ? (
                 <div dangerouslySetInnerHTML={{ __html: siteConfig.favicon.value }} className="w-5 h-5 sm:w-6 sm:h-6" />
               ) : (
-                <img src={siteConfig.favicon.value} alt="logo" className="w-5 h-5 sm:w-6 sm:h-6" />
+                <Image src={siteConfig.favicon.value} alt="logo" width={24} height={24} className="w-5 h-5 sm:w-6 sm:h-6" />
               )}
               <span className="hidden sm:inline">{t('siteName')}</span>
               <span className="sm:hidden">{t('siteName').slice(0, 4)}</span>
@@ -113,9 +114,11 @@ export function Header() {
                 )}
                 <div className="flex items-center gap-2 sm:gap-3">
                   {session.user?.image && (
-                    <img 
+                    <Image 
                       src={session.user.image} 
                       alt={session.user.name || ''} 
+                      width={32}
+                      height={32}
                       className="w-7 h-7 sm:w-8 sm:h-8 rounded-full"
                     />
                   )}

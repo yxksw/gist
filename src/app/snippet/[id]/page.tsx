@@ -21,25 +21,25 @@ export default function SnippetPage() {
   const isAuthorized = session?.user?.login && isAuthorizedUser(session.user.login)
 
   useEffect(() => {
+    const fetchSnippet = async () => {
+      try {
+        const response = await fetch(`/api/snippets/${id}`)
+        const data = await response.json()
+
+        if (!response.ok) {
+          throw new Error(data.error || 'Failed to fetch snippet')
+        }
+
+        setSnippet(data.snippet)
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'An error occurred')
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
     fetchSnippet()
   }, [id])
-
-  const fetchSnippet = async () => {
-    try {
-      const response = await fetch(`/api/snippets/${id}`)
-      const data = await response.json()
-
-      if (!response.ok) {
-        throw new Error(data.error || 'Failed to fetch snippet')
-      }
-
-      setSnippet(data.snippet)
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'An error occurred')
-    } finally {
-      setIsLoading(false)
-    }
-  }
 
   const handleDownload = () => {
     if (!snippet) return
