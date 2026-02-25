@@ -14,10 +14,9 @@ const I18nContext = createContext<I18nContextType | undefined>(undefined)
 
 export function I18nProvider({ children }: { children: React.ReactNode }) {
   const [locale, setLocaleState] = useState<Locale>(siteConfig.defaultLocale)
-  const [mounted, setMounted] = useState(false)
 
+  // Initialize from localStorage on mount
   useEffect(() => {
-    setMounted(true)
     const savedLocale = localStorage.getItem('locale') as Locale
     if (savedLocale && siteConfig.locales.includes(savedLocale)) {
       setLocaleState(savedLocale)
@@ -42,13 +41,13 @@ export function I18nProvider({ children }: { children: React.ReactNode }) {
     return value
   }
 
-  if (!mounted) {
-    return null
-  }
-
+  // Prevent hydration mismatch by rendering children only on client
+  // or use suppressHydrationWarning on the html element
   return (
     <I18nContext.Provider value={{ locale, setLocale, t }}>
-      {children}
+      <span suppressHydrationWarning>
+        {children}
+      </span>
     </I18nContext.Provider>
   )
 }

@@ -12,7 +12,18 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Build scripts use CommonJS
+    "scripts/**",
+    // Pagefind generated files
+    "public/pagefind/**",
   ]),
+  // Custom rules
+  {
+    rules: {
+      // Allow setState in useEffect for initialization patterns
+      "react-hooks/set-state-in-effect": "off",
+    },
+  },
 ]);
 
 export default eslintConfig;

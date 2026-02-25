@@ -10,7 +10,7 @@ import { SearchModal } from '@/components/search-modal'
 import { siteConfig } from '../../config'
 
 export function Header() {
-  const { data: session, status } = useSession()
+  const { data: session } = useSession()
   const { theme, toggleTheme } = useTheme()
   const { locale, setLocale, t } = useI18n()
   const [isSearchOpen, setIsSearchOpen] = useState(false)

@@ -5,7 +5,7 @@ import { useI18n } from './i18n-provider'
 import { siteConfig } from '../../config'
 
 export function Footer() {
-  const { t, locale } = useI18n()
+  const { t } = useI18n()
   const currentYear = new Date().getFullYear()
 
   return (
