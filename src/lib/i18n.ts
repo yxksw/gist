@@ -91,12 +91,16 @@ export const translations = {
     revisions: 'Revisions',
     revisionsCount: '{count} revisions',
     backToSnippet: 'Back to Snippet',
+    backToRevisions: 'Back to Revisions',
     viewDiff: 'View Diff',
     view: 'View',
     noRevisions: 'No revisions yet',
     added: 'Added',
     deleted: 'Deleted',
     modified: 'Modified',
+    revisionNotFound: 'Revision not found',
+    historicalVersion: 'Historical Version',
+    viewCurrentVersion: 'View Current Version',
   },
 
   zh: {
@@ -188,12 +192,16 @@ export const translations = {
     revisions: '修订历史',
     revisionsCount: '{count} 个修订版本',
     backToSnippet: '返回片段',
+    backToRevisions: '返回修订历史',
     viewDiff: '查看对比',
     view: '查看',
     noRevisions: '暂无修订历史',
     added: '添加',
     deleted: '删除',
     modified: '修改',
+    revisionNotFound: '修订版本未找到',
+    historicalVersion: '历史版本',
+    viewCurrentVersion: '查看当前版本',
   },
 }
 
