@@ -3,13 +3,17 @@
 import { useEffect, useState } from 'react'
 import { Snippet } from '@/lib/github'
 import { SnippetCard } from '@/components/snippet-card'
+import { Pagination } from '@/components/pagination'
 import { useI18n } from '@/components/i18n-provider'
+
+const ITEMS_PER_PAGE = 10
 
 export default function HomePage() {
   const { t } = useI18n()
   const [snippets, setSnippets] = useState<Snippet[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState('')
+  const [currentPage, setCurrentPage] = useState(1)
 
   useEffect(() => {
     fetchSnippets()
@@ -30,6 +34,18 @@ export default function HomePage() {
     } finally {
       setIsLoading(false)
     }
+  }
+
+  // Pagination logic
+  const totalPages = Math.ceil(snippets.length / ITEMS_PER_PAGE)
+  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE
+  const endIndex = startIndex + ITEMS_PER_PAGE
+  const currentSnippets = snippets.slice(startIndex, endIndex)
+
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page)
+    // Scroll to top of snippet list
+    window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 
   if (isLoading) {
@@ -80,10 +96,16 @@ export default function HomePage() {
       </div>
 
       <div className="space-y-6">
-        {snippets.map((snippet) => (
+        {currentSnippets.map((snippet) => (
           <SnippetCard key={snippet.id} snippet={snippet} />
         ))}
       </div>
+
+      <Pagination
+        currentPage={currentPage}
+        totalPages={totalPages}
+        onPageChange={handlePageChange}
+      />
     </div>
   )
 }
