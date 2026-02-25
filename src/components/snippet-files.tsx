@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { SnippetFile } from '@/lib/github'
 import { CodeBlock } from './code-block'
 import { useTheme } from './theme-provider'
+import { useI18n } from './i18n-provider'
 
 interface SnippetFilesProps {
   files: SnippetFile[]
@@ -12,6 +13,7 @@ interface SnippetFilesProps {
 
 export function SnippetFiles({ files, preview = false }: SnippetFilesProps) {
   const { theme } = useTheme()
+  const { t } = useI18n()
   const isDark = theme === 'dark'
   const [activeFile, setActiveFile] = useState(0)
 
@@ -26,8 +28,12 @@ export function SnippetFiles({ files, preview = false }: SnippetFilesProps) {
       <div className="relative">
         <CodeBlock code={displayCode} language={file.language} />
         {preview && file.code.split('\n').length > 10 && (
-          <div className="absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-gray-900 to-transparent flex items-end justify-center pb-2">
-            <span className="text-sm text-white hover:underline cursor-pointer">View full snippet</span>
+          <div className={`absolute bottom-0 left-0 right-0 h-16 flex items-end justify-center pb-2 ${
+            isDark ? 'bg-gradient-to-t from-gray-900 to-transparent' : 'bg-gradient-to-t from-gray-100 to-transparent'
+          }`}>
+            <span className={`text-sm hover:underline cursor-pointer ${isDark ? 'text-white' : 'text-gray-700'}`}>
+              {t('viewFullSnippet')}
+            </span>
           </div>
         )}
       </div>
@@ -67,8 +73,12 @@ export function SnippetFiles({ files, preview = false }: SnippetFilesProps) {
       <div className="relative">
         <CodeBlock code={displayCode} language={activeFileData.language} />
         {preview && activeFileData.code.split('\n').length > 10 && (
-          <div className="absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-gray-900 to-transparent flex items-end justify-center pb-2">
-            <span className="text-sm text-white hover:underline cursor-pointer">View full snippet</span>
+          <div className={`absolute bottom-0 left-0 right-0 h-16 flex items-end justify-center pb-2 ${
+            isDark ? 'bg-gradient-to-t from-gray-900 to-transparent' : 'bg-gradient-to-t from-gray-100 to-transparent'
+          }`}>
+            <span className={`text-sm hover:underline cursor-pointer ${isDark ? 'text-white' : 'text-gray-700'}`}>
+              {t('viewFullSnippet')}
+            </span>
           </div>
         )}
       </div>

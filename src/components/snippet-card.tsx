@@ -1,13 +1,14 @@
 import Link from 'next/link'
 import { Snippet } from '@/lib/github'
 import { SnippetFiles } from './snippet-files'
+import { useI18n } from './i18n-provider'
 
 interface SnippetCardProps {
   snippet: Snippet
 }
 
 export function SnippetCard({ snippet }: SnippetCardProps) {
-  const firstFile = snippet.files[0]
+  const { t } = useI18n()
   const hasMoreFiles = snippet.files.length > 1
 
   return (
@@ -34,7 +35,7 @@ export function SnippetCard({ snippet }: SnippetCardProps) {
         <div className="flex flex-wrap items-center gap-2 mt-2 sm:mt-3">
           {hasMoreFiles && (
             <span className="px-2 py-0.5 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 text-xs rounded-full">
-              {snippet.files.length} files
+              {snippet.files.length} {t('files').toLowerCase()}
             </span>
           )}
           {snippet.tags.slice(0, 5).map((tag) => (

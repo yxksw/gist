@@ -6,11 +6,13 @@ import { useSession } from 'next-auth/react'
 import { Snippet } from '@/lib/github'
 import { SnippetFiles } from '@/components/snippet-files'
 import { isAuthorizedUser } from '@/lib/config'
+import { useI18n } from '@/components/i18n-provider'
 
 export default function SnippetPage() {
   const params = useParams()
   const router = useRouter()
   const { data: session } = useSession()
+  const { t } = useI18n()
   const [snippet, setSnippet] = useState<Snippet | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState('')
@@ -95,7 +97,7 @@ export default function SnippetPage() {
     return (
       <div className="max-w-4xl mx-auto px-3 sm:px-4">
         <div className="text-center py-16">
-          <h2 className="text-xl font-semibold text-gray-700 dark:text-gray-300">Snippet not found</h2>
+          <h2 className="text-xl font-semibold text-gray-700 dark:text-gray-300">{t('noSnippets')}</h2>
         </div>
       </div>
     )
@@ -120,8 +122,8 @@ export default function SnippetPage() {
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
                 </svg>
-                <span className="hidden sm:inline">Download</span>
-                <span className="sm:hidden">下载</span>
+                <span className="hidden sm:inline">{t('download')}</span>
+                <span className="sm:hidden">{t('download')}</span>
               </button>
               {isAuthorized && (
                 <button
@@ -131,8 +133,8 @@ export default function SnippetPage() {
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                   </svg>
-                  <span className="hidden sm:inline">Edit</span>
-                  <span className="sm:hidden">编辑</span>
+                  <span className="hidden sm:inline">{t('edit')}</span>
+                  <span className="sm:hidden">{t('edit')}</span>
                 </button>
               )}
             </div>
@@ -156,11 +158,11 @@ export default function SnippetPage() {
                 <svg className="w-3.5 h-3.5 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                 </svg>
-                {snippet.files.length} files
+                {snippet.files.length} {t('files').toLowerCase()}
               </span>
             )}
             <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${snippet.isPublic ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400' : 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400'}`}>
-              {snippet.isPublic ? 'Public' : 'Private'}
+              {snippet.isPublic ? t('public') : t('private')}
             </span>
           </div>
 
