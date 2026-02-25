@@ -32,7 +32,7 @@ export function Header() {
               ) : siteConfig.favicon.type === 'svg' ? (
                 <div dangerouslySetInnerHTML={{ __html: siteConfig.favicon.value }} className="w-5 h-5 sm:w-6 sm:h-6" />
               ) : (
-                <Image src={siteConfig.favicon.value} alt="logo" width={24} height={24} className="w-5 h-5 sm:w-6 sm:h-6" />
+                <Image src={siteConfig.favicon.value} alt="logo" width={24} height={24} className="w-5 h-5 sm:w-6 sm:h-6" unoptimized />
               )}
               <span className="hidden sm:inline">{t('siteName')}</span>
               <span className="sm:hidden">{t('siteName').slice(0, 4)}</span>
@@ -120,6 +120,7 @@ export function Header() {
                       width={32}
                       height={32}
                       className="w-7 h-7 sm:w-8 sm:h-8 rounded-full"
+                      unoptimized
                     />
                   )}
                   <span className="text-sm text-gray-600 dark:text-gray-300 hidden md:inline">

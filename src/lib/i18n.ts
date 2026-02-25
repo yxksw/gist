@@ -81,7 +81,13 @@ export const translations = {
     // Pagination
     previous: 'Previous',
     next: 'Next',
+
+    // 404
+    pageNotFound: 'Page Not Found',
+    pageNotFoundDesc: 'Sorry, the page you are looking for does not exist or has been removed.',
+    backToHome: 'Back to Home',
   },
+
   zh: {
     // Common
     siteName: siteConfig.name,
@@ -161,6 +167,11 @@ export const translations = {
     // Pagination
     previous: '上一页',
     next: '下一页',
+
+    // 404
+    pageNotFound: '页面未找到',
+    pageNotFoundDesc: '抱歉，您访问的页面不存在或已被移除。',
+    backToHome: '返回首页',
   },
 }
 
