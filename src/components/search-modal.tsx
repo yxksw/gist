@@ -125,9 +125,15 @@ export function SearchModal({ isOpen, onClose }: SearchModalProps) {
       const searchResults = await Promise.all(
         search.results.slice(0, 10).map(async (result) => {
           const data = await result.data()
+          // Convert .html URL to /snippet/ URL
+          let url = data.url
+          if (url.endsWith('.html')) {
+            const id = url.replace(/\.html$/, '').replace(/^\//, '')
+            url = `/snippet/${id}`
+          }
           return {
-            url: data.url,
-            title: data.meta?.title || data.url,
+            url,
+            title: data.meta?.title || url,
             excerpt: data.excerpt,
           }
         })
