@@ -54,18 +54,22 @@ export function SearchModal({ isOpen, onClose }: SearchModalProps) {
     const loadPagefind = async () => {
       if (!window.pagefind) {
         try {
-          // Dynamically load pagefind script
-          const script = document.createElement('script')
-          script.src = '/pagefind/pagefind.js'
-          script.type = 'text/javascript'
-          script.async = true
+          // Fetch and execute pagefind script
+          const response = await fetch('/pagefind/pagefind.js')
+          if (!response.ok) {
+            throw new Error('Pagefind not found')
+          }
+          const scriptText = await response.text()
           
-          await new Promise<void>((resolve, reject) => {
-            script.onload = () => resolve()
-            script.onerror = () => reject()
-            document.head.appendChild(script)
-          })
+          // Create a blob with proper module type
+          const blob = new Blob([scriptText], { type: 'application/javascript' })
+          const blobUrl = URL.createObjectURL(blob)
           
+          // Import as module
+          const pagefindModule = await import(/* webpackIgnore: true */ blobUrl)
+          window.pagefind = pagefindModule.default || pagefindModule
+          
+          URL.revokeObjectURL(blobUrl)
           setPagefindLoaded(true)
         } catch (err) {
           console.error('Failed to load pagefind:', err)
@@ -89,11 +93,6 @@ export function SearchModal({ isOpen, onClose }: SearchModalProps) {
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
-        onClose()
-      }
-      // Open search on Cmd/Ctrl + K
-      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
-        e.preventDefault()
         onClose()
       }
     }
