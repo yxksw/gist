@@ -29,6 +29,25 @@ export interface SnippetFrontmatter {
   files: { filename: string; language: string }[]
 }
 
+export interface SnippetRevision {
+  sha: string
+  message: string
+  author: {
+    name: string
+    email: string
+    date: string
+  }
+  committer: {
+    name: string
+    email: string
+    date: string
+  }
+  stats?: {
+    additions: number
+    deletions: number
+  }
+}
+
 function getOctokit(accessToken?: string) {
   // Priority: user's access token > configured token > no auth
   const token = accessToken || config.github.token
@@ -414,5 +433,140 @@ export async function deleteSnippet(
   } catch (error) {
     console.error('Error deleting snippet:', error)
     return false
+  }
+}
+
+export async function getSnippetRevisions(
+  id: string,
+  accessToken?: string
+): Promise<SnippetRevision[]> {
+  const octokit = getOctokit(accessToken)
+  const { owner, repo, snippetsPath } = config.github
+
+  const snippetDir = `${snippetsPath}/${id}`
+
+  try {
+    const response = await octokit.repos.listCommits({
+      owner,
+      repo,
+      path: snippetDir,
+      per_page: 50,
+    })
+
+    const revisions: SnippetRevision[] = []
+
+    for (const commit of response.data) {
+      // Get commit details for stats
+      const commitDetail = await octokit.repos.getCommit({
+        owner,
+        repo,
+        ref: commit.sha,
+      })
+
+      let additions = 0
+      let deletions = 0
+
+      commitDetail.data.files?.forEach(file => {
+        additions += file.additions
+        deletions += file.deletions
+      })
+
+      revisions.push({
+        sha: commit.sha,
+        message: commit.commit.message,
+        author: {
+          name: commit.commit.author?.name || '',
+          email: commit.commit.author?.email || '',
+          date: commit.commit.author?.date || '',
+        },
+        committer: {
+          name: commit.commit.committer?.name || '',
+          email: commit.commit.committer?.email || '',
+          date: commit.commit.committer?.date || '',
+        },
+        stats: {
+          additions,
+          deletions,
+        },
+      })
+    }
+
+    return revisions
+  } catch (error) {
+    console.error('Error getting snippet revisions:', error)
+    return []
+  }
+}
+
+export async function getSnippetRevisionContent(
+  id: string,
+  sha: string,
+  accessToken?: string
+): Promise<Snippet | null> {
+  const octokit = getOctokit(accessToken)
+  const { owner, repo, snippetsPath } = config.github
+
+  const snippetDir = `${snippetsPath}/${id}`
+
+  try {
+    // Get the tree for this commit
+    const treeResponse = await octokit.git.getTree({
+      owner,
+      repo,
+      tree_sha: sha,
+      recursive: 'true',
+    })
+
+    const snippetFiles: SnippetFile[] = []
+    let frontmatter: SnippetFrontmatter | null = null
+
+    for (const item of treeResponse.data.tree) {
+      if (item.path?.startsWith(snippetDir) && item.type === 'blob') {
+        const fileName = item.path.split('/').pop()
+
+        if (fileName === 'index.md') {
+          // Get index.md content
+          const contentResponse = await octokit.git.getBlob({
+            owner,
+            repo,
+            file_sha: item.sha,
+          })
+          const content = Buffer.from(contentResponse.data.content, 'base64').toString('utf-8')
+          const { data } = matter(content)
+          frontmatter = data as SnippetFrontmatter
+        } else {
+          // Get file content
+          const contentResponse = await octokit.git.getBlob({
+            owner,
+            repo,
+            file_sha: item.sha,
+          })
+          const code = Buffer.from(contentResponse.data.content, 'base64').toString('utf-8')
+          snippetFiles.push({
+            filename: fileName || '',
+            language: detectLanguage(fileName || ''),
+            code,
+          })
+        }
+      }
+    }
+
+    if (!frontmatter) {
+      return null
+    }
+
+    return {
+      id,
+      title: frontmatter.title || id,
+      description: frontmatter.description || '',
+      files: snippetFiles,
+      createdAt: frontmatter.createdAt || new Date().toISOString(),
+      updatedAt: frontmatter.updatedAt || new Date().toISOString(),
+      tags: frontmatter.tags || [],
+      isPublic: frontmatter.isPublic !== false,
+    }
+  } catch (error) {
+    console.error('Error getting snippet revision content:', error)
+    return null
   }
 }

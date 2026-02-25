@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
+import Link from 'next/link'
 import { useSession } from 'next-auth/react'
 import { Snippet } from '@/lib/github'
 import { SnippetFiles } from '@/components/snippet-files'
@@ -124,6 +125,15 @@ export default function SnippetPage() {
                 </svg>
                 {t('download')}
               </button>
+              <Link
+                href={`/snippet/${id}/revisions`}
+                className="px-3 sm:px-4 py-2 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors text-sm font-medium flex items-center gap-1.5 sm:gap-2"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                {t('revisions')}
+              </Link>
               {isAuthorized && (
                 <button
                   onClick={() => router.push(`/snippet/${id}/edit`)}

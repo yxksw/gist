@@ -86,6 +86,17 @@ export const translations = {
     pageNotFound: 'Page Not Found',
     pageNotFoundDesc: 'Sorry, the page you are looking for does not exist or has been removed.',
     backToHome: 'Back to Home',
+
+    // Revisions
+    revisions: 'Revisions',
+    revisionsCount: '{count} revisions',
+    backToSnippet: 'Back to Snippet',
+    viewDiff: 'View Diff',
+    view: 'View',
+    noRevisions: 'No revisions yet',
+    added: 'Added',
+    deleted: 'Deleted',
+    modified: 'Modified',
   },
 
   zh: {
@@ -172,6 +183,17 @@ export const translations = {
     pageNotFound: '页面未找到',
     pageNotFoundDesc: '抱歉，您访问的页面不存在或已被移除。',
     backToHome: '返回首页',
+
+    // Revisions
+    revisions: '修订历史',
+    revisionsCount: '{count} 个修订版本',
+    backToSnippet: '返回片段',
+    viewDiff: '查看对比',
+    view: '查看',
+    noRevisions: '暂无修订历史',
+    added: '添加',
+    deleted: '删除',
+    modified: '修改',
   },
 }
 
