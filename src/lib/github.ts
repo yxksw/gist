@@ -570,3 +570,53 @@ export async function getSnippetRevisionContent(
     return null
   }
 }
+
+export interface SnippetDiff {
+  sha: string
+  parentSha: string
+  files: Array<{
+    filename: string
+    status: 'added' | 'removed' | 'modified' | 'renamed'
+    additions: number
+    deletions: number
+    patch?: string
+    previousFilename?: string
+  }>
+}
+
+export async function getSnippetRevisionDiff(
+  id: string,
+  sha: string,
+  accessToken?: string
+): Promise<SnippetDiff | null> {
+  const octokit = getOctokit(accessToken)
+  const { owner, repo } = config.github
+
+  try {
+    const commitResponse = await octokit.repos.getCommit({
+      owner,
+      repo,
+      ref: sha,
+    })
+
+    const parentSha = commitResponse.data.parents?.[0]?.sha || ''
+
+    const files = commitResponse.data.files?.map(file => ({
+      filename: file.filename,
+      status: file.status as 'added' | 'removed' | 'modified' | 'renamed',
+      additions: file.additions,
+      deletions: file.deletions,
+      patch: file.patch,
+      previousFilename: file.previous_filename,
+    })) || []
+
+    return {
+      sha,
+      parentSha,
+      files,
+    }
+  } catch (error) {
+    console.error('Error getting snippet revision diff:', error)
+    return null
+  }
+}

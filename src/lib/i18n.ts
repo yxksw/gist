@@ -101,6 +101,12 @@ export const translations = {
     revisionNotFound: 'Revision not found',
     historicalVersion: 'Historical Version',
     viewCurrentVersion: 'View Current Version',
+    diffNotFound: 'Diff not found',
+    renamed: 'Renamed',
+    fileAddedNoContent: 'File added (no content to display)',
+    fileDeletedNoContent: 'File deleted',
+    binaryFile: 'Binary file',
+    noChanges: 'No changes',
   },
 
   zh: {
@@ -202,6 +208,12 @@ export const translations = {
     revisionNotFound: '修订版本未找到',
     historicalVersion: '历史版本',
     viewCurrentVersion: '查看当前版本',
+    diffNotFound: '对比数据未找到',
+    renamed: '重命名',
+    fileAddedNoContent: '文件已添加（无内容显示）',
+    fileDeletedNoContent: '文件已删除',
+    binaryFile: '二进制文件',
+    noChanges: '没有变更',
   },
 }
 
