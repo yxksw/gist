@@ -7,7 +7,7 @@ export const translations = {
     siteName: siteConfig.name,
     siteTitle: siteConfig.title,
     siteDescription: siteConfig.description,
-    
+
     // Header
     newSnippet: 'New Snippet',
     newSnippetShort: '+ New',
@@ -15,13 +15,13 @@ export const translations = {
     signInShort: 'Login',
     signOut: 'Sign out',
     signOutShort: 'Logout',
-    
+
     // Home
     allSnippets: 'All Snippets',
     noSnippets: 'No snippets yet',
     noSnippetsDesc: 'Sign in and create your first code snippet!',
     snippetCount: '{count} snippet(s)',
-    
+
     // Snippet detail
     created: 'Created',
     updated: 'Updated',
@@ -33,7 +33,7 @@ export const translations = {
     viewFullSnippet: 'View full snippet',
     copy: 'Copy',
     copied: 'Copied!',
-    
+
     // Editor
     newSnippetTitle: 'New Snippet',
     editSnippetTitle: 'Edit Snippet',
@@ -55,25 +55,35 @@ export const translations = {
     cancel: 'Cancel',
     publicLabel: 'Public (visible to everyone)',
     saving: 'Saving...',
-    
+
     // Errors
     errorTitleRequired: 'Title is required',
     errorFileRequired: 'At least one file with filename and code is required',
     errorDeleteConfirm: 'Are you sure you want to delete this snippet?',
-    
+
     // Theme
     switchToDark: 'Switch to dark mode',
     switchToLight: 'Switch to light mode',
-    
+
     // Language
     switchLanguage: 'Switch language',
+
+    // Search
+    search: 'Search',
+    searchPlaceholder: 'Search snippets...',
+    noSearchResults: 'No results found',
+    searchHint: 'Type to search snippets',
+    searchPoweredBy: 'Powered by Pagefind',
+    navigate: 'navigate',
+    select: 'select',
+    loading: 'Loading...',
   },
   zh: {
     // Common
     siteName: siteConfig.name,
     siteTitle: `${siteConfig.name} - 代码片段管理器`,
     siteDescription: '一个基于 GitHub 的自托管代码片段管理器',
-    
+
     // Header
     newSnippet: '新建片段',
     newSnippetShort: '+ 新建',
@@ -81,13 +91,13 @@ export const translations = {
     signInShort: '登录',
     signOut: '退出登录',
     signOutShort: '退出',
-    
+
     // Home
     allSnippets: '所有片段',
     noSnippets: '暂无代码片段',
     noSnippetsDesc: '登录并创建你的第一个代码片段！',
     snippetCount: '{count} 个片段',
-    
+
     // Snippet detail
     created: '创建于',
     updated: '更新于',
@@ -99,7 +109,7 @@ export const translations = {
     viewFullSnippet: '查看完整片段',
     copy: '复制',
     copied: '已复制!',
-    
+
     // Editor
     newSnippetTitle: '新建片段',
     editSnippetTitle: '编辑片段',
@@ -121,18 +131,28 @@ export const translations = {
     cancel: '取消',
     publicLabel: '公开（所有人可见）',
     saving: '保存中...',
-    
+
     // Errors
     errorTitleRequired: '标题不能为空',
     errorFileRequired: '至少需要一个包含文件名和代码的文件',
     errorDeleteConfirm: '确定要删除此代码片段吗？',
-    
+
     // Theme
     switchToDark: '切换到深色模式',
     switchToLight: '切换到浅色模式',
-    
+
     // Language
     switchLanguage: '切换语言',
+
+    // Search
+    search: '搜索',
+    searchPlaceholder: '搜索代码片段...',
+    noSearchResults: '未找到结果',
+    searchHint: '输入关键词搜索',
+    searchPoweredBy: '由 Pagefind 驱动',
+    navigate: '导航',
+    select: '选择',
+    loading: '加载中...',
   },
 }
 
@@ -145,12 +165,12 @@ export function getTranslations(locale: Locale): Translations {
 export function t(key: keyof Translations, locale: Locale, params?: Record<string, string | number>): string {
   const translations = getTranslations(locale)
   let value = translations[key] || key
-  
+
   if (params) {
     Object.entries(params).forEach(([paramKey, paramValue]) => {
       value = value.replace(`{${paramKey}}`, String(paramValue))
     })
   }
-  
+
   return value
 }
