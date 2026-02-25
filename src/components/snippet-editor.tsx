@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Snippet, SnippetFile } from '@/lib/github'
+import { detectLanguage } from '@/lib/utils'
 
 interface SnippetEditorProps {
   snippet?: Snippet
@@ -14,26 +15,8 @@ const languages = [
   'go', 'rust', 'ruby', 'php', 'swift', 'kotlin', 'scala',
   'html', 'css', 'scss', 'sass', 'less', 'stylus', 'pug',
   'sql', 'bash', 'powershell',
-  'json', 'yaml', 'xml', 'markdown', 'plaintext'
+  'json', 'yaml', 'xml', 'markdown', 'text'
 ]
-
-function detectLanguage(filename: string): string {
-  const ext = filename.split('.').pop()?.toLowerCase() || ''
-  const langMap: Record<string, string> = {
-    'js': 'javascript', 'ts': 'typescript', 'tsx': 'typescript', 'jsx': 'javascript',
-    'py': 'python', 'rb': 'ruby', 'go': 'go', 'rs': 'rust',
-    'java': 'java', 'cpp': 'cpp', 'c': 'c', 'cs': 'csharp',
-    'php': 'php', 'swift': 'swift', 'kt': 'kotlin', 'scala': 'scala',
-    'html': 'html', 'htm': 'html', 'css': 'css', 'scss': 'scss',
-    'sass': 'sass', 'less': 'less', 'styl': 'stylus', 'stylus': 'stylus',
-    'pug': 'pug', 'jade': 'pug',
-    'sql': 'sql',
-    'sh': 'bash', 'bash': 'bash', 'zsh': 'bash', 'ps1': 'powershell',
-    'json': 'json', 'yaml': 'yaml', 'yml': 'yaml', 'xml': 'xml',
-    'md': 'markdown', 'txt': 'text',
-  }
-  return langMap[ext] || 'text'
-}
 
 export function SnippetEditor({ snippet, mode }: SnippetEditorProps) {
   const router = useRouter()

@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { SnippetFile } from '@/lib/github'
+import { isMarkdownFile } from '@/lib/utils'
 import { CodeBlock } from './code-block'
 import { MarkdownRenderer } from './markdown-renderer'
 import { CopyButton } from './copy-button'
@@ -14,12 +15,6 @@ interface SnippetFilesProps {
   preview?: boolean
 }
 
-function isMarkdownFile(language: string, filename: string): boolean {
-  return language === 'markdown' ||
-    filename.toLowerCase().endsWith('.md') ||
-    filename.toLowerCase().endsWith('.markdown')
-}
-
 interface FileContentProps {
   file: SnippetFile
   preview?: boolean
@@ -29,11 +24,13 @@ interface FileContentProps {
 
 function FileContent({ file, preview, isDark, t }: FileContentProps) {
   const isMarkdown = isMarkdownFile(file.language, file.filename)
+  const lines = file.code.split('\n')
+  const lineCount = lines.length
 
   if (isMarkdown) {
     // For markdown files, render as markdown
     const displayContent = preview
-      ? file.code.split('\n').slice(0, 20).join('\n')
+      ? lines.slice(0, 20).join('\n')
       : file.code
 
     return (
@@ -47,7 +44,7 @@ function FileContent({ file, preview, isDark, t }: FileContentProps) {
         </div>
         <div className={`p-4 ${isDark ? 'bg-gray-900' : 'bg-white'}`}>
           <MarkdownRenderer content={displayContent} />
-          {preview && file.code.split('\n').length > 20 && (
+          {preview && lineCount > 20 && (
             <div className={`mt-4 pt-4 text-center border-t ${isDark ? 'border-gray-700' : 'border-gray-200'}`}>
               <span className={`text-sm hover:underline cursor-pointer ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
                 {t('viewFullSnippet')}
@@ -61,13 +58,13 @@ function FileContent({ file, preview, isDark, t }: FileContentProps) {
 
   // For code files, use CodeBlock
   const displayCode = preview
-    ? file.code.split('\n').slice(0, 10).join('\n') + (file.code.split('\n').length > 10 ? '\n...' : '')
+    ? lines.slice(0, 10).join('\n') + (lineCount > 10 ? '\n...' : '')
     : file.code
 
   return (
     <div className="relative">
       <CodeBlock code={displayCode} language={file.language} />
-      {preview && file.code.split('\n').length > 10 && (
+      {preview && lineCount > 10 && (
         <div className={`absolute bottom-0 left-0 right-0 h-16 flex items-end justify-center pb-2 ${
           isDark ? 'bg-gradient-to-t from-gray-900 to-transparent' : 'bg-gradient-to-t from-gray-100 to-transparent'
         }`}>

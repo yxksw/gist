@@ -7,19 +7,17 @@ import { isAuthorizedUser } from '@/lib/config'
 import { useTheme } from '@/components/theme-provider'
 import { useI18n } from '@/components/i18n-provider'
 import { SearchModal } from '@/components/search-modal'
-import { siteConfig, Locale } from '../../config'
+import { siteConfig } from '../../config'
 
 export function Header() {
   const { data: session, status } = useSession()
   const { theme, toggleTheme } = useTheme()
   const { locale, setLocale, t } = useI18n()
   const [isSearchOpen, setIsSearchOpen] = useState(false)
-  const isLoading = status === 'loading'
   const isAuthorized = session?.user?.login && isAuthorizedUser(session.user.login)
 
   const toggleLocale = () => {
-    const newLocale: Locale = locale === 'en' ? 'zh' : 'en'
-    setLocale(newLocale)
+    setLocale(locale === 'en' ? 'zh' : 'en')
   }
 
   return (
@@ -102,9 +100,7 @@ export function Header() {
               </svg>
             </button>
 
-            {isLoading ? (
-              <div className="w-7 h-7 sm:w-8 sm:h-8 bg-gray-200 dark:bg-gray-700 rounded-full animate-pulse" />
-            ) : session ? (
+            {session ? (
               <>
                 {isAuthorized && (
                   <Link

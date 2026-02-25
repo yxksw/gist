@@ -16,23 +16,19 @@ interface SearchModalProps {
   onClose: () => void
 }
 
-// Pagefind type definition
-type PagefindAPI = {
-  search: (query: string) => Promise<{
-    results: Array<{
-      id: string
-      data: () => Promise<{
-        url: string
-        meta: { title?: string }
-        excerpt: string
-      }>
-    }>
-  }>
-}
-
 declare global {
   interface Window {
-    pagefind?: PagefindAPI
+    pagefind?: {
+      search: (query: string) => Promise<{
+        results: Array<{
+          data: () => Promise<{
+            url: string
+            meta: { title?: string }
+            excerpt: string
+          }>
+        }>
+      }>
+    }
   }
 }
 
@@ -43,52 +39,18 @@ export function SearchModal({ isOpen, onClose }: SearchModalProps) {
   const [query, setQuery] = useState('')
   const [results, setResults] = useState<SearchResult[]>([])
   const [isLoading, setIsLoading] = useState(false)
-  const [pagefindLoaded, setPagefindLoaded] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
   const isDark = theme === 'dark'
 
   // Load pagefind
   useEffect(() => {
-    if (typeof window === 'undefined') return
+    if (typeof window === 'undefined' || window.pagefind) return
 
-    const loadPagefind = async () => {
-      if (!window.pagefind) {
-        try {
-          // Fetch and execute pagefind script
-          const response = await fetch('/pagefind/pagefind.js')
-          if (!response.ok) {
-            throw new Error('Pagefind not found')
-          }
-          const scriptText = await response.text()
-          
-          // Create a blob with proper module type
-          const blob = new Blob([scriptText], { type: 'application/javascript' })
-          const blobUrl = URL.createObjectURL(blob)
-          
-          // Import as module
-          const pagefindModule = await import(/* webpackIgnore: true */ blobUrl)
-          
-          // Set basePath before init to suppress warning
-          await pagefindModule.options({
-            basePath: '/pagefind/'
-          })
-          
-          // Initialize pagefind
-          await pagefindModule.init()
-          
-          window.pagefind = pagefindModule
-          
-          URL.revokeObjectURL(blobUrl)
-          setPagefindLoaded(true)
-        } catch (err) {
-          console.error('Failed to load pagefind:', err)
-        }
-      } else {
-        setPagefindLoaded(true)
-      }
-    }
-
-    loadPagefind()
+    const script = document.createElement('script')
+    script.src = '/pagefind/pagefind.js'
+    script.type = 'module'
+    script.onload = () => setTimeout(() => window.dispatchEvent(new Event('pagefind-loaded')), 100)
+    document.head.appendChild(script)
   }, [])
 
   // Focus input when modal opens
@@ -100,19 +62,14 @@ export function SearchModal({ isOpen, onClose }: SearchModalProps) {
 
   // Close modal on Escape key
   useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        onClose()
-      }
-    }
-    if (isOpen) {
-      window.addEventListener('keydown', handleKeyDown)
-    }
+    if (!isOpen) return
+    const handleKeyDown = (e: KeyboardEvent) => e.key === 'Escape' && onClose()
+    window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
   }, [isOpen, onClose])
 
   // Search function
-  const performSearch = useCallback(async () => {
+  const search = useCallback(async () => {
     if (!query.trim() || !window.pagefind) {
       setResults([])
       return
@@ -120,16 +77,15 @@ export function SearchModal({ isOpen, onClose }: SearchModalProps) {
 
     setIsLoading(true)
     try {
-      const search = await window.pagefind.search(query)
+      const { results: searchResults } = await window.pagefind.search(query)
       
-      const searchResults = await Promise.all(
-        search.results.slice(0, 10).map(async (result) => {
+      const mappedResults = await Promise.all(
+        searchResults.slice(0, 10).map(async (result) => {
           const data = await result.data()
           // Convert .html URL to /snippet/ URL
           let url = data.url
           if (url.endsWith('.html')) {
-            const id = url.replace(/\.html$/, '').replace(/^\//, '')
-            url = `/snippet/${id}`
+            url = `/snippet/${url.replace(/\.html$/, '').replace(/^\//, '')}`
           }
           return {
             url,
@@ -139,7 +95,7 @@ export function SearchModal({ isOpen, onClose }: SearchModalProps) {
         })
       )
       
-      setResults(searchResults)
+      setResults(mappedResults)
     } catch (err) {
       console.error('Search error:', err)
       setResults([])
@@ -148,12 +104,11 @@ export function SearchModal({ isOpen, onClose }: SearchModalProps) {
     }
   }, [query])
 
+  // Debounced search
   useEffect(() => {
-    if (!pagefindLoaded) return
-
-    const timeoutId = setTimeout(performSearch, 300)
+    const timeoutId = setTimeout(search, 300)
     return () => clearTimeout(timeoutId)
-  }, [query, pagefindLoaded, performSearch])
+  }, [search])
 
   const handleResultClick = (url: string) => {
     router.push(url)
@@ -164,15 +119,12 @@ export function SearchModal({ isOpen, onClose }: SearchModalProps) {
 
   if (!isOpen) return null
 
+  const pagefindLoaded = typeof window !== 'undefined' && !!window.pagefind
+
   return (
     <div className="fixed inset-0 z-50 flex items-start justify-center pt-20 sm:pt-24">
-      {/* Backdrop */}
-      <div 
-        className="absolute inset-0 bg-black/50 backdrop-blur-sm"
-        onClick={onClose}
-      />
+      <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} />
       
-      {/* Modal */}
       <div className={`relative w-full max-w-2xl mx-4 rounded-lg shadow-2xl overflow-hidden ${
         isDark ? 'bg-gray-800' : 'bg-white'
       }`}>
@@ -194,12 +146,9 @@ export function SearchModal({ isOpen, onClose }: SearchModalProps) {
             }`}
           />
           {query && (
-            <button
-              onClick={() => setQuery('')}
-              className={`p-1 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 ${
-                isDark ? 'text-gray-400' : 'text-gray-500'
-              }`}
-            >
+            <button onClick={() => setQuery('')} className={`p-1 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 ${
+              isDark ? 'text-gray-400' : 'text-gray-500'
+            }`}>
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
               </svg>
@@ -207,9 +156,7 @@ export function SearchModal({ isOpen, onClose }: SearchModalProps) {
           )}
           <kbd className={`hidden sm:inline-block px-2 py-1 text-xs rounded ${
             isDark ? 'bg-gray-700 text-gray-400' : 'bg-gray-100 text-gray-500'
-          }`}>
-            ESC
-          </kbd>
+          }`}>ESC</kbd>
         </div>
 
         {/* Results */}
@@ -235,10 +182,8 @@ export function SearchModal({ isOpen, onClose }: SearchModalProps) {
                   }`}
                 >
                   <h3 className="font-medium text-sm mb-1">{result.title}</h3>
-                  <p 
-                    className={`text-xs line-clamp-2 ${isDark ? 'text-gray-400' : 'text-gray-500'}`}
-                    dangerouslySetInnerHTML={{ __html: result.excerpt }}
-                  />
+                  <p className={`text-xs line-clamp-2 ${isDark ? 'text-gray-400' : 'text-gray-500'}`}
+                    dangerouslySetInnerHTML={{ __html: result.excerpt }} />
                 </button>
               ))}
             </div>

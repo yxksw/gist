@@ -161,16 +161,3 @@ export type Translations = typeof translations.en
 export function getTranslations(locale: Locale): Translations {
   return translations[locale] || translations[siteConfig.defaultLocale]
 }
-
-export function t(key: keyof Translations, locale: Locale, params?: Record<string, string | number>): string {
-  const translations = getTranslations(locale)
-  let value = translations[key] || key
-
-  if (params) {
-    Object.entries(params).forEach(([paramKey, paramValue]) => {
-      value = value.replace(`{${paramKey}}`, String(paramValue))
-    })
-  }
-
-  return value
-}
