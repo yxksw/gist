@@ -173,6 +173,8 @@ async function generateSearchIndex() {
 
           const tagsHtml = snippet.tags.map(tag => `<span class="tag">${tag}</span>`).join(' ');
 
+          const snippetUrl = `/snippet/${snippet.id}`;
+          
           const html = `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -181,7 +183,7 @@ async function generateSearchIndex() {
   <title>${snippet.title}</title>
   <meta name="description" content="${snippet.description || snippet.title}">
 </head>
-<body data-pagefind-body>
+<body data-pagefind-body data-pagefind-url="${snippetUrl}">
   <article>
     <h1 data-pagefind-meta="title">${snippet.title}</h1>
     <p data-pagefind-meta="description">${snippet.description || ''}</p>
