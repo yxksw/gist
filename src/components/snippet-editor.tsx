@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { Snippet } from '@/lib/github'
+import { Snippet, SnippetFile } from '@/lib/github'
 
 interface SnippetEditorProps {
   snippet?: Snippet
@@ -16,20 +16,72 @@ const languages = [
   'json', 'yaml', 'xml', 'markdown', 'plaintext'
 ]
 
+function detectLanguage(filename: string): string {
+  const ext = filename.split('.').pop()?.toLowerCase() || ''
+  const langMap: Record<string, string> = {
+    'js': 'javascript', 'ts': 'typescript', 'tsx': 'typescript', 'jsx': 'javascript',
+    'py': 'python', 'rb': 'ruby', 'go': 'go', 'rs': 'rust',
+    'java': 'java', 'cpp': 'cpp', 'c': 'c', 'cs': 'csharp',
+    'php': 'php', 'swift': 'swift', 'kt': 'kotlin', 'scala': 'scala',
+    'html': 'html', 'htm': 'html', 'css': 'css', 'scss': 'scss',
+    'sass': 'sass', 'less': 'less', 'sql': 'sql',
+    'sh': 'bash', 'bash': 'bash', 'zsh': 'bash', 'ps1': 'powershell',
+    'json': 'json', 'yaml': 'yaml', 'yml': 'yaml', 'xml': 'xml',
+    'md': 'markdown', 'txt': 'text',
+  }
+  return langMap[ext] || 'text'
+}
+
 export function SnippetEditor({ snippet, mode }: SnippetEditorProps) {
   const router = useRouter()
   const [title, setTitle] = useState(snippet?.title || '')
   const [description, setDescription] = useState(snippet?.description || '')
-  const [language, setLanguage] = useState(snippet?.language || 'javascript')
-  const [code, setCode] = useState(snippet?.code || '')
+  const [files, setFiles] = useState<SnippetFile[]>(snippet?.files || [{ filename: '', language: 'javascript', code: '' }])
   const [tags, setTags] = useState(snippet?.tags.join(', ') || '')
   const [isPublic, setIsPublic] = useState(snippet?.isPublic ?? true)
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState('')
+  const [activeFileIndex, setActiveFileIndex] = useState(0)
+
+  const addFile = () => {
+    setFiles([...files, { filename: '', language: 'javascript', code: '' }])
+    setActiveFileIndex(files.length)
+  }
+
+  const removeFile = (index: number) => {
+    if (files.length <= 1) {
+      setError('At least one file is required')
+      return
+    }
+    const newFiles = files.filter((_, i) => i !== index)
+    setFiles(newFiles)
+    if (activeFileIndex >= index && activeFileIndex > 0) {
+      setActiveFileIndex(activeFileIndex - 1)
+    }
+  }
+
+  const updateFile = (index: number, updates: Partial<SnippetFile>) => {
+    const newFiles = [...files]
+    newFiles[index] = { ...newFiles[index], ...updates }
+    
+    // Auto-detect language when filename changes
+    if (updates.filename !== undefined) {
+      newFiles[index].language = detectLanguage(newFiles[index].filename)
+    }
+    
+    setFiles(newFiles)
+  }
 
   const handleSubmit = async () => {
-    if (!title.trim() || !code.trim()) {
-      setError('Title and code are required')
+    if (!title.trim()) {
+      setError('Title is required')
+      return
+    }
+
+    // Validate files
+    const validFiles = files.filter(f => f.filename.trim() && f.code.trim())
+    if (validFiles.length === 0) {
+      setError('At least one file with filename and code is required')
       return
     }
 
@@ -49,8 +101,7 @@ export function SnippetEditor({ snippet, mode }: SnippetEditorProps) {
         body: JSON.stringify({
           title: title.trim(),
           description: description.trim(),
-          language,
-          code: code.trim(),
+          files: validFiles,
           tags: tags.split(',').map(t => t.trim()).filter(Boolean),
           isPublic,
         }),
@@ -100,18 +151,18 @@ export function SnippetEditor({ snippet, mode }: SnippetEditorProps) {
   }
 
   return (
-    <div className="max-w-4xl mx-auto p-6">
-      <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">
+    <div className="max-w-4xl mx-auto p-3 sm:p-6">
+      <h1 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white mb-4 sm:mb-6">
         {mode === 'create' ? 'New Snippet' : 'Edit Snippet'}
       </h1>
 
       {error && (
-        <div className="mb-4 p-4 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 rounded-lg text-red-700 dark:text-red-300">
+        <div className="mb-4 p-3 sm:p-4 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 rounded-lg text-red-700 dark:text-red-300 text-sm sm:text-base">
           {error}
         </div>
       )}
 
-      <div className="space-y-4">
+      <div className="space-y-3 sm:space-y-4">
         <div>
           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
             Title *
@@ -120,7 +171,7 @@ export function SnippetEditor({ snippet, mode }: SnippetEditorProps) {
             type="text"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
-            className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+            className="w-full px-3 sm:px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-sm sm:text-base"
             placeholder="Snippet title..."
           />
         </div>
@@ -133,53 +184,122 @@ export function SnippetEditor({ snippet, mode }: SnippetEditorProps) {
             type="text"
             value={description}
             onChange={(e) => setDescription(e.target.value)}
-            className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+            className="w-full px-3 sm:px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-sm sm:text-base"
             placeholder="Brief description..."
           />
         </div>
 
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              Language
-            </label>
-            <select
-              value={language}
-              onChange={(e) => setLanguage(e.target.value)}
-              className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+        {/* Files Section */}
+        <div className="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
+          <div className="bg-gray-50 dark:bg-gray-800 px-3 sm:px-4 py-2 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
+            <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+              Files ({files.length})
+            </span>
+            <button
+              onClick={addFile}
+              className="px-3 py-1 bg-blue-600 text-white rounded text-sm hover:bg-blue-700 transition-colors"
             >
-              {languages.map((lang) => (
-                <option key={lang} value={lang}>
-                  {lang}
-                </option>
-              ))}
-            </select>
+              + Add File
+            </button>
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              Tags (comma separated)
-            </label>
-            <input
-              type="text"
-              value={tags}
-              onChange={(e) => setTags(e.target.value)}
-              className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
-              placeholder="react, hooks, tutorial"
-            />
+          {/* File Tabs */}
+          {files.length > 1 && (
+            <div className="flex overflow-x-auto border-b border-gray-200 dark:border-gray-700 bg-gray-100 dark:bg-gray-800">
+              {files.map((file, index) => (
+                <button
+                  key={index}
+                  onClick={() => setActiveFileIndex(index)}
+                  className={`px-3 sm:px-4 py-2 text-sm whitespace-nowrap transition-colors flex items-center gap-2 ${
+                    index === activeFileIndex
+                      ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-white border-b-2 border-blue-500'
+                      : 'text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'
+                  }`}
+                >
+                  {file.filename || `File ${index + 1}`}
+                  {files.length > 1 && (
+                    <span
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        removeFile(index)
+                      }}
+                      className="text-gray-400 hover:text-red-500 cursor-pointer"
+                    >
+                      ×
+                    </span>
+                  )}
+                </button>
+              ))}
+            </div>
+          )}
+
+          {/* Active File Editor */}
+          <div className="p-3 sm:p-4 space-y-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
+                  Filename *
+                </label>
+                <input
+                  type="text"
+                  value={files[activeFileIndex]?.filename || ''}
+                  onChange={(e) => updateFile(activeFileIndex, { filename: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-sm"
+                  placeholder="example.js"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
+                  Language
+                </label>
+                <select
+                  value={files[activeFileIndex]?.language || 'javascript'}
+                  onChange={(e) => updateFile(activeFileIndex, { language: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-sm"
+                >
+                  {languages.map((lang) => (
+                    <option key={lang} value={lang}>
+                      {lang}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
+                Code *
+              </label>
+              <textarea
+                value={files[activeFileIndex]?.code || ''}
+                onChange={(e) => updateFile(activeFileIndex, { code: e.target.value })}
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-800 text-gray-900 dark:text-white font-mono text-xs sm:text-sm"
+                rows={12}
+                placeholder="// Your code here..."
+              />
+            </div>
+            {files.length > 1 && (
+              <div className="flex justify-end">
+                <button
+                  onClick={() => removeFile(activeFileIndex)}
+                  className="text-xs text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300"
+                >
+                  Remove this file
+                </button>
+              </div>
+            )}
           </div>
         </div>
 
         <div>
           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-            Code *
+            Tags (comma separated)
           </label>
-          <textarea
-            value={code}
-            onChange={(e) => setCode(e.target.value)}
-            className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-800 text-gray-900 dark:text-white font-mono text-sm"
-            rows={15}
-            placeholder="// Your code here..."
+          <input
+            type="text"
+            value={tags}
+            onChange={(e) => setTags(e.target.value)}
+            className="w-full px-3 sm:px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-sm sm:text-base"
+            placeholder="react, hooks, tutorial"
           />
         </div>
 
@@ -196,11 +316,11 @@ export function SnippetEditor({ snippet, mode }: SnippetEditorProps) {
           </label>
         </div>
 
-        <div className="flex items-center gap-4 pt-4">
+        <div className="flex flex-wrap items-center gap-2 sm:gap-4 pt-4">
           <button
             onClick={handleSubmit}
             disabled={isLoading}
-            className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            className="px-4 sm:px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm sm:text-base"
           >
             {isLoading ? 'Saving...' : mode === 'create' ? 'Create Snippet' : 'Save Changes'}
           </button>
@@ -209,7 +329,7 @@ export function SnippetEditor({ snippet, mode }: SnippetEditorProps) {
             <button
               onClick={handleDelete}
               disabled={isLoading}
-              className="px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              className="px-4 sm:px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm sm:text-base"
             >
               Delete
             </button>
@@ -217,7 +337,7 @@ export function SnippetEditor({ snippet, mode }: SnippetEditorProps) {
 
           <button
             onClick={() => router.back()}
-            className="px-6 py-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
+            className="px-4 sm:px-6 py-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors text-sm sm:text-base"
           >
             Cancel
           </button>

@@ -13,7 +13,7 @@ export async function GET(
     const session = await getServerSession(authOptions)
     const accessToken = session?.accessToken
     
-    const snippet = await getSnippetContent(`snippets/${id}.md`, accessToken)
+    const snippet = await getSnippetContent(`snippets/${id}`, accessToken)
     
     if (!snippet) {
       return NextResponse.json({ error: 'Snippet not found' }, { status: 404 })
@@ -47,10 +47,10 @@ export async function PUT(
     }
 
     const body = await request.json()
-    const { title, description, language, code, tags, isPublic } = body
+    const { title, description, files, tags, isPublic } = body
 
-    if (!title || !code) {
-      return NextResponse.json({ error: 'Title and code are required' }, { status: 400 })
+    if (!title || !files || files.length === 0) {
+      return NextResponse.json({ error: 'Title and at least one file are required' }, { status: 400 })
     }
 
     const snippet = await updateSnippet(
@@ -58,8 +58,7 @@ export async function PUT(
       {
         title,
         description: description || '',
-        language: language || 'text',
-        code,
+        files,
         tags: tags || [],
         isPublic: isPublic !== false,
       },

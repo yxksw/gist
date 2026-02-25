@@ -4,6 +4,7 @@ export const config = {
     repo: process.env.NEXT_PUBLIC_GITHUB_REPO || '',
     branch: process.env.NEXT_PUBLIC_GITHUB_BRANCH || 'main',
     snippetsPath: process.env.NEXT_PUBLIC_SNIPPETS_PATH || 'snippets',
+    token: process.env.GITHUB_TOKEN || '',
   },
   auth: {
     allowedUsers: (process.env.ALLOWED_GITHUB_USERS || '').split(',').filter(Boolean),

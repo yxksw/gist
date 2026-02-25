@@ -17,18 +17,17 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { title, description, language, code, tags, isPublic } = body
+    const { title, description, files, tags, isPublic } = body
 
-    if (!title || !code) {
-      return NextResponse.json({ error: 'Title and code are required' }, { status: 400 })
+    if (!title || !files || files.length === 0) {
+      return NextResponse.json({ error: 'Title and at least one file are required' }, { status: 400 })
     }
 
     const snippet = await createSnippet(
       {
         title,
         description: description || '',
-        language: language || 'text',
-        code,
+        files,
         tags: tags || [],
         isPublic: isPublic !== false,
       },

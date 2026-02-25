@@ -2,13 +2,17 @@ import { Octokit } from '@octokit/rest'
 import matter from 'gray-matter'
 import { config } from './config'
 
+export interface SnippetFile {
+  filename: string
+  language: string
+  code: string
+}
+
 export interface Snippet {
   id: string
   title: string
   description: string
-  language: string
-  code: string
-  filename: string
+  files: SnippetFile[]
   createdAt: string
   updatedAt: string
   tags: string[]
@@ -18,19 +22,68 @@ export interface Snippet {
 export interface SnippetFrontmatter {
   title: string
   description?: string
-  language?: string
   createdAt: string
   updatedAt: string
   tags?: string[]
   isPublic?: boolean
+  files: { filename: string; language: string }[]
 }
 
-function getOctokit(accessToken: string) {
-  return new Octokit({ auth: accessToken })
+function getOctokit(accessToken?: string) {
+  // Priority: user's access token > configured token > no auth
+  const token = accessToken || config.github.token
+  if (token) {
+    return new Octokit({ auth: token })
+  }
+  return new Octokit()
+}
+
+function detectLanguage(filename: string): string {
+  const ext = filename.split('.').pop()?.toLowerCase() || ''
+  const langMap: Record<string, string> = {
+    'js': 'javascript',
+    'ts': 'typescript',
+    'tsx': 'typescript',
+    'jsx': 'javascript',
+    'py': 'python',
+    'rb': 'ruby',
+    'go': 'go',
+    'rs': 'rust',
+    'java': 'java',
+    'cpp': 'cpp',
+    'c': 'c',
+    'cs': 'csharp',
+    'php': 'php',
+    'swift': 'swift',
+    'kt': 'kotlin',
+    'scala': 'scala',
+    'html': 'html',
+    'htm': 'html',
+    'css': 'css',
+    'scss': 'scss',
+    'sass': 'sass',
+    'less': 'less',
+    'sql': 'sql',
+    'sh': 'bash',
+    'bash': 'bash',
+    'zsh': 'bash',
+    'ps1': 'powershell',
+    'json': 'json',
+    'yaml': 'yaml',
+    'yml': 'yaml',
+    'xml': 'xml',
+    'md': 'markdown',
+    'txt': 'text',
+  }
+  return langMap[ext] || 'text'
+}
+
+function isFileContent(data: unknown): data is { type: 'file'; content: string; sha: string } {
+  return typeof data === 'object' && data !== null && 'type' in data && (data as { type: string }).type === 'file'
 }
 
 export async function listSnippets(accessToken?: string): Promise<Snippet[]> {
-  const octokit = accessToken ? getOctokit(accessToken) : new Octokit()
+  const octokit = getOctokit(accessToken)
   const { owner, repo, branch, snippetsPath } = config.github
 
   try {
@@ -47,11 +100,11 @@ export async function listSnippets(accessToken?: string): Promise<Snippet[]> {
 
     const snippets: Snippet[] = []
     
-    for (const file of response.data) {
-      if (file.type === 'file' && file.name.endsWith('.md')) {
-        const content = await getSnippetContent(file.path, accessToken)
-        if (content) {
-          snippets.push(content)
+    for (const item of response.data) {
+      if (item.type === 'dir') {
+        const snippet = await getSnippetContent(item.path, accessToken)
+        if (snippet) {
+          snippets.push(snippet)
         }
       }
     }
@@ -69,38 +122,77 @@ export async function getSnippetContent(
   path: string, 
   accessToken?: string
 ): Promise<Snippet | null> {
-  const octokit = accessToken ? getOctokit(accessToken) : new Octokit()
+  const octokit = getOctokit(accessToken)
   const { owner, repo, branch } = config.github
 
   try {
-    const response = await octokit.repos.getContent({
+    const dirResponse = await octokit.repos.getContent({
       owner,
       repo,
       path,
       ref: branch,
     })
 
-    if (Array.isArray(response.data) || response.data.type !== 'file') {
+    if (!Array.isArray(dirResponse.data)) {
       return null
     }
 
-    const content = Buffer.from(response.data.content, 'base64').toString('utf-8')
-    const { data, content: code } = matter(content)
+    const indexFile = dirResponse.data.find(f => f.name === 'index.md')
+    if (!indexFile || indexFile.type !== 'file') {
+      return null
+    }
+
+    const indexResponse = await octokit.repos.getContent({
+      owner,
+      repo,
+      path: indexFile.path,
+      ref: branch,
+    })
+
+    if (Array.isArray(indexResponse.data) || !isFileContent(indexResponse.data)) {
+      return null
+    }
+
+    const indexContent = Buffer.from(indexResponse.data.content, 'base64').toString('utf-8')
+    const { data: frontmatter } = matter(indexContent)
     
-    const filename = response.data.name
-    const id = filename.replace('.md', '')
+    const id = path.split('/').pop() || ''
+    const files: SnippetFile[] = []
+
+    for (const fileInfo of frontmatter.files || []) {
+      const fileItem = dirResponse.data.find(f => f.name === fileInfo.filename)
+      if (fileItem && fileItem.type === 'file') {
+        const fileResponse = await octokit.repos.getContent({
+          owner,
+          repo,
+          path: fileItem.path,
+          ref: branch,
+        })
+        
+        if (!Array.isArray(fileResponse.data) && isFileContent(fileResponse.data)) {
+          const code = Buffer.from(fileResponse.data.content, 'base64').toString('utf-8')
+          files.push({
+            filename: fileInfo.filename,
+            language: fileInfo.language || detectLanguage(fileInfo.filename),
+            code,
+          })
+        }
+      }
+    }
+
+    if (files.length === 0) {
+      return null
+    }
 
     return {
       id,
-      title: data.title || id,
-      description: data.description || '',
-      language: data.language || 'text',
-      code: code.trim(),
-      filename,
-      createdAt: data.createdAt || new Date().toISOString(),
-      updatedAt: data.updatedAt || new Date().toISOString(),
-      tags: data.tags || [],
-      isPublic: data.isPublic !== false,
+      title: frontmatter.title || id,
+      description: frontmatter.description || '',
+      files,
+      createdAt: frontmatter.createdAt || new Date().toISOString(),
+      updatedAt: frontmatter.updatedAt || new Date().toISOString(),
+      tags: frontmatter.tags || [],
+      isPublic: frontmatter.isPublic !== false,
     }
   } catch (error) {
     console.error('Error getting snippet content:', error)
@@ -109,46 +201,54 @@ export async function getSnippetContent(
 }
 
 export async function createSnippet(
-  snippet: Omit<Snippet, 'id' | 'filename' | 'createdAt' | 'updatedAt'>,
+  snippet: Omit<Snippet, 'id' | 'createdAt' | 'updatedAt'>,
   accessToken: string
 ): Promise<Snippet | null> {
   const octokit = getOctokit(accessToken)
   const { owner, repo, branch, snippetsPath } = config.github
 
   const id = crypto.randomUUID()
-  const filename = `${id}.md`
+  const snippetDir = `${snippetsPath}/${id}`
   const now = new Date().toISOString()
 
   const frontmatter: SnippetFrontmatter = {
     title: snippet.title,
     description: snippet.description,
-    language: snippet.language,
     createdAt: now,
     updatedAt: now,
     tags: snippet.tags,
     isPublic: snippet.isPublic,
+    files: snippet.files.map(f => ({ filename: f.filename, language: f.language })),
   }
 
-  const content = matter.stringify(snippet.code, frontmatter)
-  const encodedContent = Buffer.from(content).toString('base64')
-
   try {
+    const indexContent = matter.stringify('', frontmatter)
+    
     await octokit.repos.createOrUpdateFileContents({
       owner,
       repo,
-      path: `${snippetsPath}/${filename}`,
+      path: `${snippetDir}/index.md`,
       message: `Create snippet: ${snippet.title}`,
-      content: encodedContent,
+      content: Buffer.from(indexContent).toString('base64'),
       branch,
     })
+
+    for (const file of snippet.files) {
+      await octokit.repos.createOrUpdateFileContents({
+        owner,
+        repo,
+        path: `${snippetDir}/${file.filename}`,
+        message: `Add file: ${file.filename}`,
+        content: Buffer.from(file.code).toString('base64'),
+        branch,
+      })
+    }
 
     return {
       id,
       title: snippet.title,
       description: snippet.description,
-      language: snippet.language,
-      code: snippet.code,
-      filename,
+      files: snippet.files,
       createdAt: now,
       updatedAt: now,
       tags: snippet.tags,
@@ -162,74 +262,114 @@ export async function createSnippet(
 
 export async function updateSnippet(
   id: string,
-  snippet: Omit<Snippet, 'id' | 'filename' | 'createdAt' | 'updatedAt'>,
+  snippet: Omit<Snippet, 'id' | 'createdAt' | 'updatedAt'>,
   accessToken: string
 ): Promise<Snippet | null> {
   const octokit = getOctokit(accessToken)
   const { owner, repo, branch, snippetsPath } = config.github
 
-  const filename = `${id}.md`
-  const path = `${snippetsPath}/${filename}`
+  const snippetDir = `${snippetsPath}/${id}`
+  const indexPath = `${snippetDir}/index.md`
   const now = new Date().toISOString()
 
-  let existingSha: string | undefined
-  
   try {
-    const existingFile = await octokit.repos.getContent({
+    const existingIndex = await octokit.repos.getContent({
       owner,
       repo,
-      path,
+      path: indexPath,
       ref: branch,
     })
+
+    if (Array.isArray(existingIndex.data) || !isFileContent(existingIndex.data)) {
+      return null
+    }
+
+    const existingContent = Buffer.from(existingIndex.data.content, 'base64').toString('utf-8')
+    const { data: existingFrontmatter } = matter(existingContent)
+
+    const frontmatter: SnippetFrontmatter = {
+      title: snippet.title,
+      description: snippet.description,
+      createdAt: existingFrontmatter.createdAt || now,
+      updatedAt: now,
+      tags: snippet.tags,
+      isPublic: snippet.isPublic,
+      files: snippet.files.map(f => ({ filename: f.filename, language: f.language })),
+    }
+
+    const indexContent = matter.stringify('', frontmatter)
     
-    if (!Array.isArray(existingFile.data) && existingFile.data.type === 'file') {
-      existingSha = existingFile.data.sha
-      
-      const existingContent = Buffer.from(existingFile.data.content, 'base64').toString('utf-8')
-      const { data: existingFrontmatter } = matter(existingContent)
-      
-      const frontmatter: SnippetFrontmatter = {
-        title: snippet.title,
-        description: snippet.description,
-        language: snippet.language,
-        createdAt: existingFrontmatter.createdAt || now,
-        updatedAt: now,
-        tags: snippet.tags,
-        isPublic: snippet.isPublic,
+    await octokit.repos.createOrUpdateFileContents({
+      owner,
+      repo,
+      path: indexPath,
+      message: `Update snippet: ${snippet.title}`,
+      content: Buffer.from(indexContent).toString('base64'),
+      sha: existingIndex.data.sha,
+      branch,
+    })
+
+    const dirResponse = await octokit.repos.getContent({
+      owner,
+      repo,
+      path: snippetDir,
+      ref: branch,
+    })
+
+    if (Array.isArray(dirResponse.data)) {
+      const existingFiles = new Set(dirResponse.data.map(f => f.name))
+      const newFiles = new Set(snippet.files.map(f => f.filename))
+
+      for (const file of snippet.files) {
+        const filePath = `${snippetDir}/${file.filename}`
+        let sha: string | undefined
+
+        if (existingFiles.has(file.filename)) {
+          const existingFile = dirResponse.data.find(f => f.name === file.filename)
+          if (existingFile && existingFile.type === 'file') {
+            sha = existingFile.sha
+          }
+        }
+
+        await octokit.repos.createOrUpdateFileContents({
+          owner,
+          repo,
+          path: filePath,
+          message: sha ? `Update file: ${file.filename}` : `Add file: ${file.filename}`,
+          content: Buffer.from(file.code).toString('base64'),
+          sha,
+          branch,
+        })
       }
 
-      const content = matter.stringify(snippet.code, frontmatter)
-      const encodedContent = Buffer.from(content).toString('base64')
-
-      await octokit.repos.createOrUpdateFileContents({
-        owner,
-        repo,
-        path,
-        message: `Update snippet: ${snippet.title}`,
-        content: encodedContent,
-        sha: existingSha,
-        branch,
-      })
-
-      return {
-        id,
-        title: snippet.title,
-        description: snippet.description,
-        language: snippet.language,
-        code: snippet.code,
-        filename,
-        createdAt: existingFrontmatter.createdAt || now,
-        updatedAt: now,
-        tags: snippet.tags,
-        isPublic: snippet.isPublic,
+      for (const existingFile of dirResponse.data) {
+        if (existingFile.name !== 'index.md' && !newFiles.has(existingFile.name) && existingFile.type === 'file') {
+          await octokit.repos.deleteFile({
+            owner,
+            repo,
+            path: existingFile.path,
+            message: `Delete file: ${existingFile.name}`,
+            sha: existingFile.sha,
+            branch,
+          })
+        }
       }
+    }
+
+    return {
+      id,
+      title: snippet.title,
+      description: snippet.description,
+      files: snippet.files,
+      createdAt: existingFrontmatter.createdAt || now,
+      updatedAt: now,
+      tags: snippet.tags,
+      isPublic: snippet.isPublic,
     }
   } catch (error) {
     console.error('Error updating snippet:', error)
     return null
   }
-
-  return null
 }
 
 export async function deleteSnippet(
@@ -239,29 +379,32 @@ export async function deleteSnippet(
   const octokit = getOctokit(accessToken)
   const { owner, repo, branch, snippetsPath } = config.github
 
-  const filename = `${id}.md`
-  const path = `${snippetsPath}/${filename}`
+  const snippetDir = `${snippetsPath}/${id}`
 
   try {
-    const existingFile = await octokit.repos.getContent({
+    const dirResponse = await octokit.repos.getContent({
       owner,
       repo,
-      path,
+      path: snippetDir,
       ref: branch,
     })
-    
-    if (Array.isArray(existingFile.data)) {
+
+    if (!Array.isArray(dirResponse.data)) {
       return false
     }
 
-    await octokit.repos.deleteFile({
-      owner,
-      repo,
-      path,
-      message: `Delete snippet: ${id}`,
-      sha: existingFile.data.sha,
-      branch,
-    })
+    for (const file of dirResponse.data) {
+      if (file.type === 'file') {
+        await octokit.repos.deleteFile({
+          owner,
+          repo,
+          path: file.path,
+          message: `Delete snippet: ${id}`,
+          sha: file.sha,
+          branch,
+        })
+      }
+    }
 
     return true
   } catch (error) {
