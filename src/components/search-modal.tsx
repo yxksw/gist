@@ -67,7 +67,16 @@ export function SearchModal({ isOpen, onClose }: SearchModalProps) {
           
           // Import as module
           const pagefindModule = await import(/* webpackIgnore: true */ blobUrl)
-          window.pagefind = pagefindModule.default || pagefindModule
+          
+          // Set basePath before init to suppress warning
+          await pagefindModule.options({
+            basePath: '/pagefind/'
+          })
+          
+          // Initialize pagefind
+          await pagefindModule.init()
+          
+          window.pagefind = pagefindModule
           
           URL.revokeObjectURL(blobUrl)
           setPagefindLoaded(true)
