@@ -12,7 +12,8 @@ interface SnippetEditorProps {
 const languages = [
   'javascript', 'typescript', 'python', 'java', 'c', 'cpp', 'csharp',
   'go', 'rust', 'ruby', 'php', 'swift', 'kotlin', 'scala',
-  'html', 'css', 'scss', 'sql', 'bash', 'powershell',
+  'html', 'css', 'scss', 'sass', 'less', 'stylus', 'pug',
+  'sql', 'bash', 'powershell',
   'json', 'yaml', 'xml', 'markdown', 'plaintext'
 ]
 
@@ -24,7 +25,9 @@ function detectLanguage(filename: string): string {
     'java': 'java', 'cpp': 'cpp', 'c': 'c', 'cs': 'csharp',
     'php': 'php', 'swift': 'swift', 'kt': 'kotlin', 'scala': 'scala',
     'html': 'html', 'htm': 'html', 'css': 'css', 'scss': 'scss',
-    'sass': 'sass', 'less': 'less', 'sql': 'sql',
+    'sass': 'sass', 'less': 'less', 'styl': 'stylus', 'stylus': 'stylus',
+    'pug': 'pug', 'jade': 'pug',
+    'sql': 'sql',
     'sh': 'bash', 'bash': 'bash', 'zsh': 'bash', 'ps1': 'powershell',
     'json': 'json', 'yaml': 'yaml', 'yml': 'yaml', 'xml': 'xml',
     'md': 'markdown', 'txt': 'text',
