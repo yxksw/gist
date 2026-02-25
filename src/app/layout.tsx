@@ -5,6 +5,7 @@ import { SessionProvider } from "@/components/session-provider";
 import { ThemeProvider } from "@/components/theme-provider";
 import { I18nProvider } from "@/components/i18n-provider";
 import { Header } from "@/components/header";
+import { Footer } from "@/components/footer";
 import { siteConfig } from "../../config";
 
 const geistSans = Geist({
@@ -49,10 +50,13 @@ export default function RootLayout({
         <I18nProvider>
           <ThemeProvider>
             <SessionProvider>
-              <Header />
-              <main className="py-6">
-                {children}
-              </main>
+              <div className="flex flex-col min-h-screen">
+                <Header />
+                <main className="flex-1 py-6">
+                  {children}
+                </main>
+                <Footer />
+              </div>
             </SessionProvider>
           </ThemeProvider>
         </I18nProvider>
