@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { SnippetFile } from '@/lib/github'
 import { CodeBlock } from './code-block'
 import { MarkdownRenderer } from './markdown-renderer'
+import { CopyButton } from './copy-button'
 import { useTheme } from './theme-provider'
 import { useI18n } from './i18n-provider'
 import { Translations } from '@/lib/i18n'
@@ -14,9 +15,9 @@ interface SnippetFilesProps {
 }
 
 function isMarkdownFile(language: string, filename: string): boolean {
-  return language === 'markdown' || 
-         filename.toLowerCase().endsWith('.md') || 
-         filename.toLowerCase().endsWith('.markdown')
+  return language === 'markdown' ||
+    filename.toLowerCase().endsWith('.md') ||
+    filename.toLowerCase().endsWith('.markdown')
 }
 
 interface FileContentProps {
@@ -28,32 +29,41 @@ interface FileContentProps {
 
 function FileContent({ file, preview, isDark, t }: FileContentProps) {
   const isMarkdown = isMarkdownFile(file.language, file.filename)
-  
+
   if (isMarkdown) {
     // For markdown files, render as markdown
-    const displayContent = preview 
-      ? file.code.split('\n').slice(0, 20).join('\n') 
+    const displayContent = preview
+      ? file.code.split('\n').slice(0, 20).join('\n')
       : file.code
-    
+
     return (
-      <div className={`p-4 ${isDark ? 'bg-gray-900' : 'bg-white'}`}>
-        <MarkdownRenderer content={displayContent} />
-        {preview && file.code.split('\n').length > 20 && (
-          <div className={`mt-4 pt-4 text-center border-t ${isDark ? 'border-gray-700' : 'border-gray-200'}`}>
-            <span className={`text-sm hover:underline cursor-pointer ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
-              {t('viewFullSnippet')}
-            </span>
-          </div>
-        )}
+      <div>
+        {/* Copy button for markdown */}
+        <div className={`px-4 py-2 border-b flex items-center justify-between ${isDark ? 'bg-gray-800 border-gray-700' : 'bg-gray-100 border-gray-200'}`}>
+          <span className={`text-xs font-medium uppercase ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
+            markdown
+          </span>
+          <CopyButton text={file.code} />
+        </div>
+        <div className={`p-4 ${isDark ? 'bg-gray-900' : 'bg-white'}`}>
+          <MarkdownRenderer content={displayContent} />
+          {preview && file.code.split('\n').length > 20 && (
+            <div className={`mt-4 pt-4 text-center border-t ${isDark ? 'border-gray-700' : 'border-gray-200'}`}>
+              <span className={`text-sm hover:underline cursor-pointer ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
+                {t('viewFullSnippet')}
+              </span>
+            </div>
+          )}
+        </div>
       </div>
     )
   }
-  
+
   // For code files, use CodeBlock
-  const displayCode = preview 
-    ? file.code.split('\n').slice(0, 10).join('\n') + (file.code.split('\n').length > 10 ? '\n...' : '') 
+  const displayCode = preview
+    ? file.code.split('\n').slice(0, 10).join('\n') + (file.code.split('\n').length > 10 ? '\n...' : '')
     : file.code
-  
+
   return (
     <div className="relative">
       <CodeBlock code={displayCode} language={file.language} />
@@ -102,8 +112,8 @@ export function SnippetFiles({ files, preview = false }: SnippetFilesProps) {
             onClick={() => setActiveFile(index)}
             className={`px-4 py-2 text-sm font-medium whitespace-nowrap transition-colors ${
               index === activeFile
-                ? isDark 
-                  ? 'bg-gray-700 text-white border-b-2 border-blue-500' 
+                ? isDark
+                  ? 'bg-gray-700 text-white border-b-2 border-blue-500'
                   : 'bg-white text-gray-900 border-b-2 border-blue-500'
                 : isDark
                   ? 'text-gray-400 hover:text-gray-200 hover:bg-gray-700'

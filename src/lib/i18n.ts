@@ -32,6 +32,7 @@ export const translations = {
     edit: 'Edit',
     viewFullSnippet: 'View full snippet',
     copy: 'Copy',
+    copied: 'Copied!',
     
     // Editor
     newSnippetTitle: 'New Snippet',
@@ -97,6 +98,7 @@ export const translations = {
     edit: '编辑',
     viewFullSnippet: '查看完整片段',
     copy: '复制',
+    copied: '已复制!',
     
     // Editor
     newSnippetTitle: '新建片段',
