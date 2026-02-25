@@ -8,20 +8,23 @@ import { useTheme } from '@/components/theme-provider'
 export default function NotFound() {
   const { t } = useI18n()
   const { theme } = useTheme()
+  const containerRef = useRef<HTMLDivElement>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const isDark = theme === 'dark'
 
   useEffect(() => {
     const canvas = canvasRef.current
-    if (!canvas) return
+    const container = containerRef.current
+    if (!canvas || !container) return
 
     const ctx = canvas.getContext('2d')
     if (!ctx) return
 
-    // Set canvas size
+    // Set canvas size to match container
     const resize = () => {
-      canvas.width = window.innerWidth
-      canvas.height = window.innerHeight
+      const rect = container.getBoundingClientRect()
+      canvas.width = rect.width
+      canvas.height = rect.height
     }
     resize()
     window.addEventListener('resize', resize)
@@ -36,7 +39,7 @@ export default function NotFound() {
       color: string
     }> = []
 
-    const colors = isDark 
+    const colors = isDark
       ? ['#3b82f6', '#8b5cf6', '#ec4899', '#10b981', '#f59e0b']
       : ['#60a5fa', '#a78bfa', '#f472b6', '#34d399', '#fbbf24']
 
@@ -85,7 +88,7 @@ export default function NotFound() {
             ctx.moveTo(particle.x, particle.y)
             ctx.lineTo(other.x, other.y)
             const alpha = 0.2 * (1 - distance / 150)
-            ctx.strokeStyle = isDark 
+            ctx.strokeStyle = isDark
               ? `rgba(100, 100, 100, ${alpha})`
               : `rgba(150, 150, 150, ${alpha})`
             ctx.stroke()
@@ -105,11 +108,16 @@ export default function NotFound() {
   }, [isDark])
 
   return (
-    <div className="relative flex-1 flex items-center justify-center overflow-hidden">
+    <div
+      ref={containerRef}
+      className={`relative w-full min-h-[calc(100vh-64px-56px)] flex items-center justify-center overflow-hidden ${
+        isDark ? 'bg-gray-900' : 'bg-gray-50'
+      }`}
+    >
       {/* Animated background */}
       <canvas
         ref={canvasRef}
-        className={`absolute inset-0 ${isDark ? 'bg-gray-900' : 'bg-gray-50'}`}
+        className="absolute inset-0 w-full h-full"
       />
 
       {/* Content */}
@@ -126,8 +134,8 @@ export default function NotFound() {
         <Link
           href="/"
           className={`inline-flex items-center gap-2 px-6 py-3 rounded-lg transition-colors font-medium ${
-            isDark 
-              ? 'bg-blue-600 hover:bg-blue-700 text-white' 
+            isDark
+              ? 'bg-blue-600 hover:bg-blue-700 text-white'
               : 'bg-blue-500 hover:bg-blue-600 text-white'
           }`}
         >
