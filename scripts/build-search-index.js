@@ -1,54 +1,46 @@
-const { createIndex } = require('pagefind');
-const { listSnippets } = require('../src/lib/github');
+const { execSync } = require('child_process');
 const fs = require('fs');
 const path = require('path');
 
-async function buildSearchIndex() {
-  console.log('Building search index...');
+// Create a temporary HTML directory for indexing
+const tempDir = path.join(__dirname, '../.pagefind-temp');
+const outputDir = path.join(__dirname, '../public/pagefind');
 
-  // Create index
-  const { index } = await createIndex();
-
-  // Get all snippets
-  const snippets = await listSnippets(process.env.GITHUB_TOKEN);
-
-  console.log(`Indexing ${snippets.length} snippets...`);
-
-  // Add each snippet to the index
-  for (const snippet of snippets) {
-    if (!snippet.isPublic) continue; // Only index public snippets
-
-    const content = snippet.files.map(f => f.code).join('\n\n');
-    const fileContent = `
-      <html>
-        <head>
-          <title>${snippet.title}</title>
-          <meta name="description" content="${snippet.description || ''}">
-        </head>
-        <body>
-          <h1>${snippet.title}</h1>
-          <p>${snippet.description || ''}</p>
-          <pre><code>${content.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</code></pre>
-        </body>
-      </html>
-    `;
-
-    await index.addHTMLFile({
-      url: `/snippet/${snippet.id}`,
-      content: fileContent,
-    }, {
-      language: 'zh',
-    });
-  }
-
-  // Write index to public directory
-  const outputDir = path.join(__dirname, '../public/pagefind');
-  await index.writeFiles(outputDir);
-
-  console.log(`Search index built successfully at ${outputDir}`);
+// Ensure directories exist
+if (!fs.existsSync(tempDir)) {
+  fs.mkdirSync(tempDir, { recursive: true });
 }
 
-buildSearchIndex().catch(err => {
-  console.error('Failed to build search index:', err);
+// Create a simple HTML file for testing
+const testHtml = `<!DOCTYPE html>
+<html>
+<head>
+  <title>Test Snippet</title>
+  <meta name="description" content="A test code snippet">
+</head>
+<body>
+  <h1>Test Snippet</h1>
+  <p>This is a test snippet for pagefind indexing.</p>
+  <pre><code>console.log('Hello World');</code></pre>
+</body>
+</html>`;
+
+fs.writeFileSync(path.join(tempDir, 'test.html'), testHtml);
+
+console.log('Building Pagefind index...');
+
+try {
+  // Run pagefind CLI
+  execSync(`npx pagefind --site "${tempDir}" --output-path "${outputDir}"`, {
+    stdio: 'inherit',
+    cwd: path.join(__dirname, '..')
+  });
+  
+  console.log('Search index built successfully!');
+  
+  // Clean up temp directory
+  fs.rmSync(tempDir, { recursive: true, force: true });
+} catch (error) {
+  console.error('Failed to build search index:', error);
   process.exit(1);
-});
+}
