@@ -55,14 +55,16 @@ export function SearchModal({ isOpen, onClose }: SearchModalProps) {
     const script = document.createElement('script')
     script.src = '/pagefind/pagefind.js'
     script.type = 'module'
-    script.onload = () => {
-      setTimeout(() => {
-        if (window.pagefind) {
-          setPagefindLoaded(true)
-        }
-      }, 100)
-    }
     document.head.appendChild(script)
+
+    const checkPagefind = setInterval(() => {
+      if (window.pagefind) {
+        clearInterval(checkPagefind)
+        setPagefindLoaded(true)
+      }
+    }, 100)
+
+    return () => clearInterval(checkPagefind)
   }, [])
 
   // Focus input when modal opens
