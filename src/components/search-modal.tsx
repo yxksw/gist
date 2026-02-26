@@ -48,19 +48,25 @@ export function SearchModal({ isOpen, onClose }: SearchModalProps) {
     if (typeof window === 'undefined') return
     
     if (window.pagefind) {
+      console.log('pagefind already loaded')
       setPagefindLoaded(true)
       return
     }
 
+    console.log('loading pagefind script...')
     const script = document.createElement('script')
     script.src = '/pagefind/pagefind.js'
     script.type = 'module'
+    script.onload = () => console.log('script onload fired')
+    script.onerror = (e) => console.error('script onerror:', e)
     document.head.appendChild(script)
 
     const checkPagefind = setInterval(() => {
+      console.log('checking pagefind...', !!window.pagefind)
       if (window.pagefind) {
         clearInterval(checkPagefind)
         setPagefindLoaded(true)
+        console.log('pagefind loaded!')
       }
     }, 100)
 
