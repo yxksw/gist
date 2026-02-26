@@ -97,6 +97,7 @@ function detectLanguage(filename: string): string {
     'xml': 'xml',
     'md': 'markdown',
     'txt': 'text',
+    'vue': 'vue',
   }
   return langMap[ext] || 'text'
 }

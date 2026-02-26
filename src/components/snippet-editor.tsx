@@ -15,7 +15,7 @@ const languages = [
   'go', 'rust', 'ruby', 'php', 'swift', 'kotlin', 'scala',
   'html', 'css', 'scss', 'sass', 'less', 'stylus', 'pug',
   'sql', 'bash', 'powershell',
-  'json', 'yaml', 'xml', 'markdown', 'text'
+  'json', 'yaml', 'xml', 'markdown', 'text', 'vue'
 ]
 
 export function SnippetEditor({ snippet, mode }: SnippetEditorProps) {
