@@ -19,6 +19,7 @@ interface SearchModalProps {
 declare global {
   interface Window {
     pagefind?: {
+      init: () => Promise<void>
       search: (query: string) => Promise<{
         results: Array<{
           data: () => Promise<{
@@ -30,6 +31,28 @@ declare global {
       }>
     }
   }
+}
+
+let pagefindPromise: Promise<typeof window.pagefind> | null = null
+
+async function initPagefind(): Promise<typeof window.pagefind> {
+  if (typeof window === 'undefined') return undefined
+  
+  if (window.pagefind) return window.pagefind
+  
+  if (pagefindPromise) return pagefindPromise
+
+  pagefindPromise = (async () => {
+    const pf = await import(
+      /* webpackIgnore: true */ 
+      '/pagefind/pagefind.js'
+    )
+    window.pagefind = pf
+    await pf.init()
+    return pf
+  })()
+
+  return pagefindPromise
 }
 
 export function SearchModal({ isOpen, onClose }: SearchModalProps) {
@@ -47,30 +70,16 @@ export function SearchModal({ isOpen, onClose }: SearchModalProps) {
   useEffect(() => {
     if (typeof window === 'undefined') return
     
-    if (window.pagefind) {
-      console.log('pagefind already loaded')
-      setPagefindLoaded(true)
-      return
-    }
-
-    console.log('loading pagefind script...')
-    const script = document.createElement('script')
-    script.src = '/pagefind/pagefind.js'
-    script.type = 'module'
-    script.onload = () => console.log('script onload fired')
-    script.onerror = (e) => console.error('script onerror:', e)
-    document.head.appendChild(script)
-
-    const checkPagefind = setInterval(() => {
-      console.log('checking pagefind...', !!window.pagefind)
-      if (window.pagefind) {
-        clearInterval(checkPagefind)
-        setPagefindLoaded(true)
-        console.log('pagefind loaded!')
-      }
-    }, 100)
-
-    return () => clearInterval(checkPagefind)
+    initPagefind()
+      .then((pf) => {
+        if (pf) {
+          console.log('pagefind initialized')
+          setPagefindLoaded(true)
+        }
+      })
+      .catch((err) => {
+        console.error('Failed to init pagefind:', err)
+      })
   }, [])
 
   // Focus input when modal opens
