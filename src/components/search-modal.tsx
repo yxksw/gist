@@ -42,15 +42,35 @@ async function initPagefind(): Promise<typeof window.pagefind> {
   
   if (pagefindPromise) return pagefindPromise
 
-  pagefindPromise = (async () => {
-    const pf = await import(
-      /* webpackIgnore: true */ 
-      '/pagefind/pagefind.js'
-    )
-    window.pagefind = pf
-    await pf.init()
-    return pf
-  })()
+  pagefindPromise = new Promise((resolve, reject) => {
+    const inlineScript = document.createElement('script')
+    inlineScript.textContent = `
+      import('/pagefind/pagefind.js').then(async (pf) => {
+        await pf.init();
+        window.pagefind = pf;
+        window.dispatchEvent(new Event('pagefind-ready'));
+      }).catch((err) => {
+        console.error('Failed to load pagefind:', err);
+      });
+    `
+    document.head.appendChild(inlineScript)
+    
+    const timeout = setTimeout(() => {
+      reject(new Error('Pagefind load timeout'))
+    }, 10000)
+    
+    const handler = () => {
+      clearTimeout(timeout)
+      window.removeEventListener('pagefind-ready', handler)
+      if (window.pagefind) {
+        resolve(window.pagefind)
+      } else {
+        reject(new Error('Pagefind not available'))
+      }
+    }
+    
+    window.addEventListener('pagefind-ready', handler)
+  })
 
   return pagefindPromise
 }
