@@ -23,6 +23,7 @@ const languageMap: Record<string, string> = {
   shell: 'bash',
   yml: 'yaml',
   md: 'markdown',
+  vue: 'vue',
 }
 
 export function CodeBlock({ code, language, showLineNumbers = true }: CodeBlockProps) {

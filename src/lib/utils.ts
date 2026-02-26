@@ -17,6 +17,7 @@ export function detectLanguage(filename: string): string {
     'sh': 'bash', 'bash': 'bash', 'zsh': 'bash', 'ps1': 'powershell',
     'json': 'json', 'yaml': 'yaml', 'yml': 'yaml', 'xml': 'xml',
     'md': 'markdown', 'txt': 'text',
+    'vue': 'vue',
   }
   return langMap[ext] || 'text'
 }
