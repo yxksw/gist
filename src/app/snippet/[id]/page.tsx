@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { useSession } from 'next-auth/react'
+import JSZip from 'jszip'
 import { Snippet } from '@/lib/github'
 import { SnippetFiles } from '@/components/snippet-files'
 import { isAuthorizedUser } from '@/lib/config'
@@ -42,7 +43,7 @@ export default function SnippetPage() {
     fetchSnippet()
   }, [id])
 
-  const handleDownload = () => {
+  const handleDownload = async () => {
     if (!snippet) return
     
     if (snippet.files.length === 1) {
@@ -57,14 +58,15 @@ export default function SnippetPage() {
       document.body.removeChild(a)
       URL.revokeObjectURL(url)
     } else {
-      // Download all files as a zip would require a library like JSZip
-      // For now, download the first file
-      const file = snippet.files[0]
-      const blob = new Blob([file.code], { type: 'text/plain' })
+      const zip = new JSZip()
+      snippet.files.forEach(file => {
+        zip.file(file.filename, file.code)
+      })
+      const blob = await zip.generateAsync({ type: 'blob' })
       const url = URL.createObjectURL(blob)
       const a = document.createElement('a')
       a.href = url
-      a.download = file.filename
+      a.download = `${snippet.title || 'snippet'}.zip`
       document.body.appendChild(a)
       a.click()
       document.body.removeChild(a)

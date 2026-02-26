@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { useParams, useRouter } from 'next/navigation'
+import { useParams } from 'next/navigation'
 import Link from 'next/link'
 import { SnippetRevision } from '@/lib/github'
 import { useI18n } from '@/components/i18n-provider'
@@ -9,7 +9,6 @@ import { useTheme } from '@/components/theme-provider'
 
 export default function RevisionsPage() {
   const params = useParams()
-  const router = useRouter()
   const { t } = useI18n()
   const { theme } = useTheme()
   const isDark = theme === 'dark'

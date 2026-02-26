@@ -39,17 +39,29 @@ export function SearchModal({ isOpen, onClose }: SearchModalProps) {
   const [query, setQuery] = useState('')
   const [results, setResults] = useState<SearchResult[]>([])
   const [isLoading, setIsLoading] = useState(false)
+  const [pagefindLoaded, setPagefindLoaded] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
   const isDark = theme === 'dark'
 
   // Load pagefind
   useEffect(() => {
-    if (typeof window === 'undefined' || window.pagefind) return
+    if (typeof window === 'undefined') return
+    
+    if (window.pagefind) {
+      setPagefindLoaded(true)
+      return
+    }
 
     const script = document.createElement('script')
     script.src = '/pagefind/pagefind.js'
     script.type = 'module'
-    script.onload = () => setTimeout(() => window.dispatchEvent(new Event('pagefind-loaded')), 100)
+    script.onload = () => {
+      setTimeout(() => {
+        if (window.pagefind) {
+          setPagefindLoaded(true)
+        }
+      }, 100)
+    }
     document.head.appendChild(script)
   }, [])
 
@@ -118,8 +130,6 @@ export function SearchModal({ isOpen, onClose }: SearchModalProps) {
   }
 
   if (!isOpen) return null
-
-  const pagefindLoaded = typeof window !== 'undefined' && !!window.pagefind
 
   return (
     <div className="fixed inset-0 z-50 flex items-start justify-center pt-20 sm:pt-24">
